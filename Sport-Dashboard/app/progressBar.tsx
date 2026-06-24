@@ -17,14 +17,17 @@ export default function ProgressBar({ onClose, stars }: ProgressBarProps) {
   const [selectedRewards, setSelectedRewards] = useState(Rewards[1]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("selectedRewardId");
-    if (saved) {
-      const found = Rewards.find(r => r.id === saved);
-      if (found) setSelectedRewards(found);
-    }
+    try {
+      const saved = localStorage.getItem("selectedRewardId");
+      if (saved) {
+        const found = Rewards.find(r => r.id === saved);
+        if (found) setSelectedRewards(found);
+      }
+    } catch { /* storage unavailable */ }
   }, []);
+
   useEffect(() => {
-    localStorage.setItem("selectedRewardId", selectedRewards.id);
+    try { localStorage.setItem("selectedRewardId", selectedRewards.id); } catch { /* storage unavailable */ }
   }, [selectedRewards]);
   const goal_stars = selectedRewards.cost;
   const currentProgress = stars % goal_stars;

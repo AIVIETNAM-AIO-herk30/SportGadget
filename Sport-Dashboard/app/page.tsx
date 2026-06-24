@@ -23,21 +23,23 @@ export default function Home(){
   const [getUser, setGetUser] = useState("");
 
   useEffect(() => {
-    const savedName = localStorage.getItem("savedUserName");
-    if (savedName) {
-      setGetUser(savedName);
-    }
+    try {
+      const savedName = localStorage.getItem("savedUserName");
+      if (savedName) setGetUser(savedName);
+    } catch { /* storage unavailable */ }
   },[]);
   const handleSetName = (name: string) => {
     setGetUser(name);
-    localStorage.setItem("savedUserName", name);
+    try { localStorage.setItem("savedUserName", name); } catch { /* storage unavailable */ }
   };
 
   const [totalAccumulatedStars, setTotalAccumulatedStars] = useState<number>(0);
 
   useEffect(() => {
-    const saved = localStorage.getItem("fightTag_totalStars");
-    if (saved) setTotalAccumulatedStars(parseInt(saved, 10));
+    try {
+      const saved = localStorage.getItem("fightTag_totalStars");
+      if (saved) setTotalAccumulatedStars(parseInt(saved, 10));
+    } catch { /* storage unavailable */ }
   }, []);
   const currentSessionStars = Math.max(0, Math.floor((calories / 70) || 0));
   const grandTotalStars = totalAccumulatedStars + currentSessionStars;
@@ -119,7 +121,7 @@ export default function Home(){
     if (stars > 0) {
       const newTotal = totalAccumulatedStars + stars;
       setTotalAccumulatedStars(newTotal); 
-      localStorage.setItem("fightTag_totalStars", newTotal.toString()); 
+      try { localStorage.setItem("fightTag_totalStars", newTotal.toString()); } catch { /* storage unavailable */ }
       
       setCalories(0);
       setTotalSeconds(0);
@@ -143,70 +145,74 @@ export default function Home(){
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };  
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const esp32_ips = ["172.20.10.2"]; 
-      let socket: WebSocket | null = null;
-      let isConnected = false;
+    if (typeof window === "undefined") return;
 
-      const connectToESP32 = (ipIndex: number) => {
-        if (ipIndex >= esp32_ips.length) {
-          console.error("Đã thử hết tất cả IP nhưng không thể kết nối tới ESP32.");
-          setConnected(0);
-          return;
-        }
-        
-        const currentIp = esp32_ips[ipIndex];
-        console.log(`Đang thử kết nối WebSocket với: ${currentIp}...`);
-        
-        try {
-          socket = new WebSocket(`ws://${currentIp}/ws`);
-
-          socket.onopen = () => {
-            console.log(`Kết nối thành công với ESP32 tại IP: ${currentIp}`);
-            isConnected = true;
-          };
-
-          socket.onmessage = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              setHeartRate(data.hr);
-              setCalories(data.cal);
-              setIntensity(data.intensity);
-              setTotalSeconds(data.time);
-              setConnected(Number(data.connected));
-            } catch (err) {
-              console.error("Lỗi đọc dữ liệu JSON:", err);
-            }
-          };
-
-          socket.onerror = (error) => {
-            console.error(`Lỗi kết nối tại ${currentIp}`);
-          };
-
-          socket.onclose = () => {
-            if (!isConnected) {
-              console.log(`Kết nối thất bại với ${currentIp}, chuyển sang IP tiếp theo...`);
-              connectToESP32(ipIndex + 1);
-            } else {
-              console.log("Bị mất kết nối với ESP32 đang chạy.");
-              isConnected = false;
-              setConnected(0);
-            }
-          };
-        } catch (error) {
-          console.error(`Trình duyệt đã chặn kết nối tới ${currentIp} (Lỗi Mixed Content):`, error);
-          setConnected(0);
-        }
-      };
-
-      connectToESP32(0);
-      
-      return () => {
-        if (socket) {
-          socket.close();
-        }
-      };
+    // ws:// is blocked by browsers on HTTPS pages (Mixed Content)
+    if (window.location.protocol === "https:") {
+      console.warn("Trang đang chạy trên HTTPS — không thể kết nối ws:// tới ESP32. Hãy truy cập qua HTTP trên mạng nội bộ.");
+      return;
     }
+
+    const esp32_ips = ["172.20.10.2"];
+    let socket: WebSocket | null = null;
+    let isConnected = false;
+
+    const connectToESP32 = (ipIndex: number) => {
+      if (ipIndex >= esp32_ips.length) {
+        console.error("Đã thử hết tất cả IP nhưng không thể kết nối tới ESP32.");
+        setConnected(0);
+        return;
+      }
+
+      const currentIp = esp32_ips[ipIndex];
+      console.log(`Đang thử kết nối WebSocket với: ${currentIp}...`);
+
+      try {
+        socket = new WebSocket(`ws://${currentIp}/ws`);
+
+        socket.onopen = () => {
+          console.log(`Kết nối thành công với ESP32 tại IP: ${currentIp}`);
+          isConnected = true;
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            setHeartRate(data.hr);
+            setCalories(data.cal);
+            setIntensity(data.intensity);
+            setTotalSeconds(data.time);
+            setConnected(Number(data.connected));
+          } catch (err) {
+            console.error("Lỗi đọc dữ liệu JSON:", err);
+          }
+        };
+
+        socket.onerror = () => {
+          console.error(`Lỗi kết nối tại ${currentIp}`);
+        };
+
+        socket.onclose = () => {
+          if (!isConnected) {
+            console.log(`Kết nối thất bại với ${currentIp}, chuyển sang IP tiếp theo...`);
+            connectToESP32(ipIndex + 1);
+          } else {
+            console.log("Bị mất kết nối với ESP32 đang chạy.");
+            isConnected = false;
+            setConnected(0);
+          }
+        };
+      } catch (error) {
+        console.error(`Trình duyệt đã chặn kết nối tới ${currentIp}:`, error);
+        setConnected(0);
+      }
+    };
+
+    connectToESP32(0);
+
+    return () => {
+      if (socket) socket.close();
+    };
   }, []);
   useEffect(() => {
       const timer = setInterval(() => {
