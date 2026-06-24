@@ -3,8 +3,9 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <ESPAsyncWebServer.h>
+#include <ESPmDNS.h>
 #include <string.h>
-#include <ArduinoOTA.h> 
+#include <ArduinoOTA.h>
 
 using namespace std;
 
@@ -14,11 +15,6 @@ WiFiMulti wifiMulti;
 
 const uint32_t connectTimeoutMs = 10000;
 
-IPAddress local_IP(172, 20, 10, 2);
-IPAddress gateway(172, 20, 10, 1);
-IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(8, 8, 8, 8);     
-IPAddress secondaryDNS(8, 8, 4, 4);  
 
 int age = 18;   
 float weight = 69.0;
@@ -64,29 +60,26 @@ void setup() {
   delay(2000);
   setCpuFrequencyMhz(80);
 
-  Serial.print("Đang cấu hình IP tĩnh...");
-  // Change IP Number through lines 17-19 above
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-    Serial.println("Lỗi cấu hình IP Tĩnh!");
-  }
-
   wifiMulti.addAP("Ti Li", "tianhtiem2730");
   wifiMulti.addAP("TRIA CAFE", "Triacafe");
   wifiMulti.addAP("ACLAB", "ACLAB2023");
-  wifiMulti.addAP("le","LNKhoi301007");
+  wifiMulti.addAP("le", "LNKhoi301007");
 
   Serial.print("Đang tìm và kết nối Wi-Fi");
-  
   while (wifiMulti.run() != WL_CONNECTED) {
-    delay(500); 
+    delay(500);
     Serial.print(".");
   }
-  
+
   Serial.println("\n--- ĐÃ KẾT NỐI WIFI ---");
   Serial.print("Đang dùng mạng: ");
   Serial.println(WiFi.SSID());
   Serial.print("ESP IP là: ");
   Serial.println(WiFi.localIP());
+
+  if (MDNS.begin("esp32")) {
+    Serial.println("mDNS started — truy cập tại: esp32.local");
+  }
 
   server.addHandler(&ws);
   ws.onEvent(onEvent);

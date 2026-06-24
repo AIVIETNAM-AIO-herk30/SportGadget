@@ -153,7 +153,7 @@ export default function Home(){
       return;
     }
 
-    const esp32_ips = ["172.20.10.2"];
+    const esp32_ips = ["esp32.local"];
     let socket: WebSocket | null = null;
     let isConnected = false;
 
