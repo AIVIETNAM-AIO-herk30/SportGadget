@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { MdBluetoothConnected, MdBluetoothDisabled } from "react-icons/md";
-import { Routes, Route, Navigate } from 'react-router-dom';
 import { FaStar} from "react-icons/fa";
 import { IoIosCloudDownload } from "react-icons/io";
 import { FaBarsProgress } from "react-icons/fa6";
@@ -34,13 +33,12 @@ export default function Home(){
     localStorage.setItem("savedUserName", name);
   };
 
-  const [totalAccumulatedStars, setTotalAccumulatedStars] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("fightTag_totalStars");
-      return saved ? parseInt(saved, 10) : 0;
-    }
-    return 0;
-  });
+  const [totalAccumulatedStars, setTotalAccumulatedStars] = useState<number>(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("fightTag_totalStars");
+    if (saved) setTotalAccumulatedStars(parseInt(saved, 10));
+  }, []);
   const currentSessionStars = Math.max(0, Math.floor((calories / 70) || 0));
   const grandTotalStars = totalAccumulatedStars + currentSessionStars;
   const countStar = Math.max(0, Math.floor((calories / 70) || 0));
@@ -52,25 +50,24 @@ export default function Home(){
   };
   useEffect(()=>
     {
-      let interval: NodeJS.Timeout;
-      if (isRunning) {
-        interval = setInterval(() => {
-          setSeconds((prev) => prev + 1);
-        }, 1000);
-      }
+      if (!isRunning) return;
+      const interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
   },[isRunning]);
 
   useEffect(()=> {
     if (!isRunning) return ;
     if (phase == 'Work'){
-       if (seconds === 0) playSound('sportapp\Sound\Start.mp3');
-       else if (seconds === 60) playSound('sportapp\Sound\Onemin.mp3');
-       else if (seconds === 120) playSound('sportapp\Sound\Twomin.mp3');
+       if (seconds === 0) playSound('/Sound/Start.mp3');
+       else if (seconds === 60) playSound('/Sound/Onemin.mp3');
+       else if (seconds === 120) playSound('/Sound/Twomin.mp3');
        else if (seconds > 150 && seconds < 180) {
-        playSound('sportapp\Sound\BaMuoiSecond.mp3');                                  
+        playSound('/Sound/BaMuoiSecond.mp3');                                  
       }
       else if (seconds ===180){
-        playSound('sportapp\Sound\TimeOut.mp3');
+        playSound('/Sound/TimeOut.mp3');
         setTimeout(() => {
           setPhase('Rest');
           setSeconds(0);
@@ -79,7 +76,7 @@ export default function Home(){
      } 
      else if (phase == 'Rest'){
       if (seconds ==30){
-        playSound('sportapp\Sound\Start.mp3');
+        playSound('/Sound/Start.mp3');
         setTimeout(() => {
           setPhase('Work');
           setSeconds(0);

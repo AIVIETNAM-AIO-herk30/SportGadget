@@ -1,4 +1,4 @@
-// components/SignInModal.tsx
+"use client";
 import React, { useState, useEffect} from "react";
 import { FaStar } from "react-icons/fa";
 
@@ -14,15 +14,15 @@ const Rewards = [
   { id: 'Normal', name: 'Normal', emoji: '🍚', cost: 4 },
 ];
 export default function ProgressBar({ onClose, stars }: ProgressBarProps) {
-  const [selectedRewards, setSelectedRewards] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("selectedRewardId");
-      if (saved) {
-        return Rewards.find(r => r.id === saved) || Rewards[1];
-      }
+  const [selectedRewards, setSelectedRewards] = useState(Rewards[1]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("selectedRewardId");
+    if (saved) {
+      const found = Rewards.find(r => r.id === saved);
+      if (found) setSelectedRewards(found);
     }
-    return Rewards[1]; 
-  });
+  }, []);
   useEffect(() => {
     localStorage.setItem("selectedRewardId", selectedRewards.id);
   }, [selectedRewards]);

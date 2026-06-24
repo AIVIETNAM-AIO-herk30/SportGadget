@@ -14,8 +14,8 @@ WiFiMulti wifiMulti;
 
 const uint32_t connectTimeoutMs = 10000;
 
-IPAddress local_IP(192, 168, 1, 50); 
-IPAddress gateway(192, 168, 1, 1);
+IPAddress local_IP(172, 20, 10, 2);
+IPAddress gateway(172, 20, 10, 1);
 IPAddress subnet(255, 255, 255, 0);
 IPAddress primaryDNS(8, 8, 8, 8);     
 IPAddress secondaryDNS(8, 8, 4, 4);  
@@ -65,7 +65,7 @@ void setup() {
   setCpuFrequencyMhz(80);
 
   Serial.print("Đang cấu hình IP tĩnh...");
-  Change IP Number through 67->69 lines
+  // Change IP Number through lines 17-19 above
   if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     Serial.println("Lỗi cấu hình IP Tĩnh!");
   }
